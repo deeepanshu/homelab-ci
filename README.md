@@ -1,0 +1,46 @@
+# homelab-ci
+
+Reusable GitHub Actions for homelab apps: build → GHCR → Komodo `DeployStack` → ntfy.
+
+## Caller
+
+```yaml
+name: Deploy Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - "Dockerfile"
+      - "infra/docker/**"
+      - ".github/workflows/deploy-service.yml"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Optional image tag to deploy (default: github.sha)"
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    uses: deeepanshu/homelab-ci/.github/workflows/komodo-deploy.yml@main
+    with:
+      stack: family-os
+      image_name: deeepanshu/family-os-health-api
+      image_tag_variable: FAMILY_OS_IMAGE_TAG
+      image_path_regex: '^(apps/api/|Dockerfile$)'
+      deploy_path_regex: '^(infra/docker/|\.github/workflows/deploy-service\.yml$)'
+      caller_event: ${{ github.event_name }}
+      caller_before: ${{ github.event.before }}
+      image_tag: ${{ inputs.image_tag }}
+    secrets: inherit
+```
+
+## Secrets (caller repo or org)
+
+- `KOMODO_API_KEY`
+- `KOMODO_API_SECRET`
+- `NTFY_TOPIC` (optional)
+
+Komodo stack env must use `IMAGE_TAG=[[<image_tag_variable>]]`.
