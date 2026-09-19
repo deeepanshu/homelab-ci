@@ -42,6 +42,7 @@ copy instead of vendoring the script into each repo:
 | Clone path | `/etc/komodo/repos/homelab-ci` |
 | Stack `post_deploy.path` | `.` (the stack's own repo root) |
 | Stack `post_deploy.command` | `/etc/komodo/repos/homelab-ci/scripts/sync-grafana-dashboards.sh` |
+| Default `DEST_DIR` | `/etc/komodo/repos/observability/grafana/provisioning/dashboards/files/apps` |
 
 `SRC_DIR` defaults to `grafana/dashboards` and resolves against the stack's run
 directory, so each app publishes its own dashboards with no per-repo script.

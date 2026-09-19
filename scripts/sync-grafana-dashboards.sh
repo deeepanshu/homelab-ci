@@ -9,14 +9,15 @@
 #   path    = .
 #   command = /etc/komodo/repos/homelab-ci/scripts/sync-grafana-dashboards.sh
 #
-# Grafana's file provider polls the destination directory, so no reload call or
-# admin credentials are needed. Replaces the dashboard-sync half of the retired
-# homelab-manager.
+# Destination is the observability stack checkout on CT 113 (Komodo-managed):
+# Grafana bind-mounts that tree; file provider polls files/apps.
+# Replaces the dashboard-sync half of the retired homelab-manager.
 set -euo pipefail
 
 SRC_DIR="${SRC_DIR:-grafana/dashboards}"
 DEST_HOST="${DEST_HOST:-192.168.1.66}"
-DEST_DIR="${DEST_DIR:-/opt/homelab/observability/grafana/provisioning/dashboards/files/apps}"
+# Komodo repo clone on observability CT (not legacy /opt/homelab/observability).
+DEST_DIR="${DEST_DIR:-/etc/komodo/repos/observability/grafana/provisioning/dashboards/files/apps}"
 
 if [ ! -d "${SRC_DIR}" ]; then
   echo "No ${SRC_DIR} directory; nothing to publish."
