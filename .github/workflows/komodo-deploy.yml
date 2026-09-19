@@ -241,8 +241,8 @@ jobs:
           STACK: ${{ inputs.stack }}
         run: |
           set -euo pipefail
-          if [ -z "${NTFY_TOPIC}" ]; then
-            echo "NTFY_TOPIC secret not set; skipping"
+          if [ -z "${NTFY_TOPIC}" ] || [ -z "${NTFY_SERVER}" ]; then
+            echo "NTFY_TOPIC or NTFY_SERVER secret not set; skipping"
             exit 0
           fi
 
@@ -264,8 +264,7 @@ jobs:
           fi
 
           body="status=${status} tag=${IMAGE_TAG} sha=${SHA:0:12} build=${BUILD} deploy=${DEPLOY}"
-          server_url="${NTFY_SERVER:-https://ntfy.deepanshujain.me}"
-          server_url="${server_url%/}"
+          server_url="${NTFY_SERVER%/}"
           auth_header=()
           if [ -n "${NTFY_TOKEN:-}" ]; then
             auth_header=(-H "Authorization: Bearer ${NTFY_TOKEN}")
