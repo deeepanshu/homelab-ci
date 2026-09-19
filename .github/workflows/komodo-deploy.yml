@@ -231,7 +231,7 @@ jobs:
     steps:
       - name: Publish ntfy
         env:
-          NTFY_SERVER: ${{ secrets.NTFY_SERVER || 'https://ntfy.deepanshujain.me' }}
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
           BUILD: ${{ needs.build-and-push.result }}
@@ -264,7 +264,8 @@ jobs:
           fi
 
           body="status=${status} tag=${IMAGE_TAG} sha=${SHA:0:12} build=${BUILD} deploy=${DEPLOY}"
-          server_url="${NTFY_SERVER%/}"
+          server_url="${NTFY_SERVER:-https://ntfy.deepanshujain.me}"
+          server_url="${server_url%/}"
           auth_header=()
           if [ -n "${NTFY_TOKEN:-}" ]; then
             auth_header=(-H "Authorization: Bearer ${NTFY_TOKEN}")
