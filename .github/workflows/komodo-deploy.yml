@@ -54,9 +54,12 @@ on:
         required: true
       KOMODO_API_SECRET:
         required: true
+      NTFY_TOKEN:
+        required: false
       NTFY_TOPIC:
         required: false
-
+      NTFY_SERVER:
+        required: false
 permissions:
   contents: read
   packages: write
@@ -231,8 +234,8 @@ jobs:
     steps:
       - name: Publish ntfy
         env:
-          NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ secrets.NTFY_SERVER || 'https://ntfy.deepanshujain.me' }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC || 'deploys' }}
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
           BUILD: ${{ needs.build-and-push.result }}
           DEPLOY: ${{ needs.deploy.result }}
@@ -241,8 +244,8 @@ jobs:
           STACK: ${{ inputs.stack }}
         run: |
           set -euo pipefail
-          if [ -z "${NTFY_TOPIC}" ] || [ -z "${NTFY_SERVER}" ]; then
-            echo "NTFY_TOPIC or NTFY_SERVER secret not set; skipping"
+          if [ -z "${NTFY_TOKEN:-}" ]; then
+            echo "NTFY_TOKEN secret not set; skipping notification"
             exit 0
           fi
 
