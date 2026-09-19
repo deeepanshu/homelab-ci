@@ -25,7 +25,7 @@ jobs:
     secrets: inherit
 ```
 
-Secrets live on each caller repo: `KOMODO_API_KEY`, `KOMODO_API_SECRET`, `NTFY_TOPIC`.
+Secrets live on each caller repo: `KOMODO_API_KEY`, `KOMODO_API_SECRET`, and optional notification secrets: `NTFY_SERVER`, `NTFY_TOPIC`, `NTFY_TOKEN`.
 Komodo stack env must use `IMAGE_TAG=[[<image_tag_variable>]]`.
 
 ## `scripts/sync-grafana-dashboards.sh`
