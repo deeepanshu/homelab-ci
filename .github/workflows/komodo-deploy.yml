@@ -202,7 +202,7 @@ jobs:
             local path="$1"
             local body="$2"
             curl -fsS --max-time 120 -X POST \
-              "https://komodo.deepanshujain.me${path}" \
+              "https://komodo.waylands.xyz${path}" \
               -H "content-type: application/json" \
               -H "x-api-key: ${KOMODO_API_KEY}" \
               -H "x-api-secret: ${KOMODO_API_SECRET}" \
@@ -276,7 +276,7 @@ jobs:
             -H "Title: ${title}" \
             -H "Priority: ${prio}" \
             -H "Tags: ${tags}" \
-            -H "Click: https://komodo.deepanshujain.me/" \
+            -H "Click: https://komodo.waylands.xyz/" \
             "${auth_header[@]}" \
             -d "${body}"
           echo "ntfy ${status}"
