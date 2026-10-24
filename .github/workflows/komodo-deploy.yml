@@ -49,6 +49,11 @@ on:
         required: false
         type: string
         default: ""
+      komodo_url:
+        description: Komodo Core public URL
+        required: false
+        type: string
+        default: "https://komodo.waylands.xyz"
     secrets:
       KOMODO_API_KEY:
         required: true
@@ -188,6 +193,7 @@ jobs:
         env:
           KOMODO_API_KEY: ${{ secrets.KOMODO_API_KEY }}
           KOMODO_API_SECRET: ${{ secrets.KOMODO_API_SECRET }}
+          KOMODO_URL: ${{ inputs.komodo_url }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag || needs.changes.outputs.image_tag }}
           STACK: ${{ inputs.stack }}
           TAG_VAR: ${{ inputs.image_tag_variable }}
@@ -202,7 +208,7 @@ jobs:
             local path="$1"
             local body="$2"
             curl -fsS --max-time 120 -X POST \
-              "https://komodo.deepanshujain.me${path}" \
+              "${KOMODO_URL}${path}" \
               -H "content-type: application/json" \
               -H "x-api-key: ${KOMODO_API_KEY}" \
               -H "x-api-secret: ${KOMODO_API_SECRET}" \
@@ -237,6 +243,7 @@ jobs:
           NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+          KOMODO_URL: ${{ inputs.komodo_url }}
           BUILD: ${{ needs.build-and-push.result }}
           DEPLOY: ${{ needs.deploy.result }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag || needs.changes.outputs.image_tag }}
@@ -276,7 +283,7 @@ jobs:
             -H "Title: ${title}" \
             -H "Priority: ${prio}" \
             -H "Tags: ${tags}" \
-            -H "Click: https://komodo.deepanshujain.me/" \
+            -H "Click: ${KOMODO_URL}/" \
             "${auth_header[@]}" \
             -d "${body}"
           echo "ntfy ${status}"
