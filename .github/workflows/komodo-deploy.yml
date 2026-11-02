@@ -54,6 +54,11 @@ on:
         required: false
         type: string
         default: "https://komodo.waylands.xyz"
+      github_environment:
+        description: GitHub Environment on the caller repo (e.g. production)
+        required: false
+        type: string
+        default: ""
     secrets:
       KOMODO_API_KEY:
         required: true
@@ -186,6 +191,7 @@ jobs:
     name: Deploy via Komodo
     needs: [changes, build-and-push]
     runs-on: ubuntu-latest
+    environment: ${{ inputs.github_environment }}
     timeout-minutes: 15
     if: |
       always() &&
