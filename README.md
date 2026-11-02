@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: read
       packages: write        # required: callee cannot elevate GITHUB_TOKEN
+      id-token: write        # required: Tailscale OAuth via GitHub OIDC
     with:
       stack: family-os
       image_name: deeepanshu/family-os-health-api
@@ -25,8 +26,8 @@ jobs:
     secrets: inherit
 ```
 
-Secrets live on each caller repo: `KOMODO_API_KEY`, `KOMODO_API_SECRET`, and optional notification secrets: `NTFY_SERVER`, `NTFY_TOPIC`, `NTFY_TOKEN`.
-Komodo stack env must use `IMAGE_TAG=[[<image_tag_variable>]]`.
+Secrets live on each caller repo: `KOMODO_API_KEY`, `KOMODO_API_SECRET`, Tailscale OIDC (`TS_OAUTH_CLIENT_ID`, `TS_AUDIENCE`, same as jain-site), and optional notification secrets: `NTFY_SERVER`, `NTFY_TOPIC`, `NTFY_TOKEN`.
+Komodo is on the tailnet (`komodo.waylands.xyz` → `100.x`). The deploy job joins Tailscale before `DeployStack`.
 
 ## `scripts/sync-grafana-dashboards.sh`
 

@@ -59,6 +59,10 @@ on:
         required: true
       KOMODO_API_SECRET:
         required: true
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_AUDIENCE:
+        required: false
       NTFY_TOKEN:
         required: false
       NTFY_TOPIC:
@@ -68,6 +72,7 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
 
 concurrency:
   group: komodo-deploy-${{ inputs.stack }}-${{ github.ref }}
@@ -189,6 +194,15 @@ jobs:
       (needs.changes.outputs.build != 'true' || needs.build-and-push.result == 'success') &&
       (github.ref == 'refs/heads/main' || inputs.caller_event == 'workflow_dispatch')
     steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+          ping: komodo.waylands.xyz
+          args: --accept-dns=false
+
       - name: Pin IMAGE_TAG and deploy stack
         env:
           KOMODO_API_KEY: ${{ secrets.KOMODO_API_KEY }}
@@ -227,6 +241,10 @@ jobs:
           echo "DeployStack ${STACK}"
           komodo /execute "$(jq -nc --arg s "${STACK}" \
             '{type:"DeployStack",params:{stack:$s}}')"
+
+      - name: Disconnect Tailscale
+        if: always()
+        run: sudo -E tailscale logout
 
   notify:
     name: ntfy
