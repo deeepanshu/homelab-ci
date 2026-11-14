@@ -255,7 +255,8 @@ jobs:
             if [ -n "${ip}" ]; then
               found=1
               echo "::add-mask::${ip}"
-              if tailscale ping -c 1 "${ip}" >/dev/null 2>&1; then
+              ping_out="$(tailscale ping -c 1 "${ip}" 2>&1 || true)"
+              if printf '%s' "${ping_out}" | grep -qE 'pong from|direct connection not established'; then
                 ping_ok=1
                 break
               fi
