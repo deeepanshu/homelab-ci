@@ -241,8 +241,9 @@ jobs:
               def peers: [(.Self // empty)] + ((.Peer // {}) | to_entries | map(.value));
               peers[]
               | select(
-                  ((.DNSName // "") | rtrimstr(".") | ascii_downcase) == ($h | ascii_downcase)
-                  or ((.HostName // "") | ascii_downcase) == ($s | ascii_downcase)
+                  ((.DNSName // "") | rtrimstr(".")) == $h
+                  or (.HostName // "") == $s
+                  or ((.DNSName // "") | startswith($s + "."))
                 )
               | .TailscaleIPs[]
               | select(test("^[0-9.]+$"))
