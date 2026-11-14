@@ -49,11 +49,6 @@ on:
         required: false
         type: string
         default: ""
-      komodo_url:
-        description: Komodo Core public URL
-        required: false
-        type: string
-        default: "https://komodo.waylands.xyz"
       github_environment:
         description: GitHub Environment on the caller repo (e.g. production)
         required: false
@@ -73,6 +68,8 @@ on:
       NTFY_TOPIC:
         required: false
       NTFY_SERVER:
+        required: false
+      KOMODO_URL:
         required: false
 permissions:
   contents: read
@@ -206,14 +203,13 @@ jobs:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           audience: ${{ secrets.TS_AUDIENCE }}
           tags: tag:ci
-          ping: komodo.waylands.xyz
           args: --accept-dns=false
 
       - name: Pin IMAGE_TAG and deploy stack
         env:
           KOMODO_API_KEY: ${{ secrets.KOMODO_API_KEY }}
           KOMODO_API_SECRET: ${{ secrets.KOMODO_API_SECRET }}
-          KOMODO_URL: ${{ inputs.komodo_url }}
+          KOMODO_URL: ${{ secrets.KOMODO_URL }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag || needs.changes.outputs.image_tag }}
           STACK: ${{ inputs.stack }}
           TAG_VAR: ${{ inputs.image_tag_variable }}
@@ -223,11 +219,54 @@ jobs:
             echo "Missing KOMODO_API_KEY or KOMODO_API_SECRET" >&2
             exit 1
           fi
+          if [ -z "${KOMODO_URL}" ]; then
+            echo "Missing KOMODO_URL secret" >&2
+            exit 1
+          fi
+
+          host="${KOMODO_URL#https://}"
+          host="${host#http://}"
+          host="${host%%/*}"
+          echo "::add-mask::${host}"
+          if [ -z "${host}" ]; then
+            echo "KOMODO_URL has no host" >&2
+            exit 1
+          fi
+          short="${host%%.*}"
+
+          deadline=$((SECONDS + 180))
+          ip=""
+          while [ "${SECONDS}" -lt "${deadline}" ]; do
+            ip="$(tailscale status --json | jq -r --arg h "${host}" --arg s "${short}" '
+              def peers: [(.Self // empty)] + ((.Peer // {}) | to_entries | map(.value));
+              peers[]
+              | select(
+                  ((.DNSName // "") | rtrimstr(".")) == $h
+                  or (.HostName // "") == $s
+                  or ((.DNSName // "") | startswith($s + "."))
+                )
+              | .TailscaleIPs[]
+              | select(test("^[0-9.]+$"))
+            ' | head -1 || true)"
+            if [ -n "${ip}" ]; then
+              echo "::add-mask::${ip}"
+              ping_out="$(tailscale ping -c 1 "${ip}" 2>&1 || true)"
+              if printf '%s' "${ping_out}" | grep -qE 'pong from|direct connection not established'; then
+                break
+              fi
+            fi
+            ip=""
+            sleep 2
+          done
+          if [ -z "${ip}" ]; then
+            echo "Komodo host not reachable over Tailscale" >&2
+            exit 1
+          fi
 
           komodo() {
             local path="$1"
             local body="$2"
-            curl -fsS --max-time 120 -X POST \
+            curl -fsS --max-time 120 --resolve "${host}:443:${ip}" -X POST \
               "${KOMODO_URL}${path}" \
               -H "content-type: application/json" \
               -H "x-api-key: ${KOMODO_API_KEY}" \
@@ -267,7 +306,7 @@ jobs:
           NTFY_SERVER: ${{ secrets.NTFY_SERVER }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
-          KOMODO_URL: ${{ inputs.komodo_url }}
+          CLICK_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           BUILD: ${{ needs.build-and-push.result }}
           DEPLOY: ${{ needs.deploy.result }}
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag || needs.changes.outputs.image_tag }}
@@ -307,7 +346,7 @@ jobs:
             -H "Title: ${title}" \
             -H "Priority: ${prio}" \
             -H "Tags: ${tags}" \
-            -H "Click: ${KOMODO_URL}/" \
+            -H "Click: ${CLICK_URL}" \
             "${auth_header[@]}" \
             -d "${body}"
           echo "ntfy ${status}"
