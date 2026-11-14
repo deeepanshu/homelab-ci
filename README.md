@@ -27,8 +27,8 @@ jobs:
     secrets: inherit
 ```
 
-Secrets live on each caller repo. Put Tailscale OIDC (`TS_OAUTH_CLIENT_ID`, `TS_AUDIENCE`) on the GitHub Environment named in `github_environment` (Strapi uses `production`). Also `KOMODO_API_KEY`, `KOMODO_API_SECRET`, and optional `NTFY_SERVER`, `NTFY_TOPIC`, `NTFY_TOKEN`.
-Komodo is on the tailnet (`komodo.waylands.xyz` → `100.x`). The deploy job joins Tailscale before `DeployStack`. Do not set `environment:` on the caller `uses:` job — GitHub rejects it; pass `github_environment` instead.
+Secrets live on each caller repo. Put Tailscale OIDC (`TS_OAUTH_CLIENT_ID`, `TS_AUDIENCE`) and `KOMODO_URL` on the GitHub Environment named in `github_environment` (Strapi uses `production`). Also `KOMODO_API_KEY`, `KOMODO_API_SECRET`, and optional `NTFY_SERVER`, `NTFY_TOPIC`, `NTFY_TOKEN`.
+`KOMODO_URL` is the Komodo Core HTTPS origin. Do not pass it as a workflow input; GitHub logs inputs. The deploy job strips the scheme for `tailscale ping` and masks the host. The deploy job joins Tailscale before `DeployStack`. Do not set `environment:` on the caller `uses:` job — GitHub rejects it; pass `github_environment` instead.
 
 ## `scripts/sync-grafana-dashboards.sh`
 
