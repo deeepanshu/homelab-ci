@@ -236,6 +236,10 @@ jobs:
 
           deadline=$((SECONDS + 180))
           ip=""
+          found=0
+          ping_ok=0
+          peers="$(tailscale status --json | jq '.Peer | length')"
+          echo "peers=${peers}"
           while [ "${SECONDS}" -lt "${deadline}" ]; do
             ip="$(tailscale status --json | jq -r --arg h "${host}" --arg s "${short}" '
               def peers: [(.Self // empty)] + ((.Peer // {}) | to_entries | map(.value));
@@ -249,14 +253,17 @@ jobs:
               | select(test("^[0-9.]+$"))
             ' | head -1 || true)"
             if [ -n "${ip}" ]; then
+              found=1
               echo "::add-mask::${ip}"
               if tailscale ping -c 1 "${ip}" >/dev/null 2>&1; then
+                ping_ok=1
                 break
               fi
             fi
             ip=""
             sleep 2
           done
+          echo "found=${found} ping=${ping_ok}"
           if [ -z "${ip}" ]; then
             echo "Komodo host not reachable over Tailscale" >&2
             exit 1
