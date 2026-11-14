@@ -232,16 +232,28 @@ jobs:
             echo "KOMODO_URL has no host" >&2
             exit 1
           fi
+          short="${host%%.*}"
 
           deadline=$((SECONDS + 180))
           ip=""
           while [ "${SECONDS}" -lt "${deadline}" ]; do
-            ping_out="$(tailscale ping -c 1 "${host}" 2>&1 || true)"
-            ip="$(printf '%s\n' "${ping_out}" | grep -oE '100\.[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+            ip="$(tailscale status --json | jq -r --arg h "${host}" --arg s "${short}" '
+              def peers: [(.Self // empty)] + ((.Peer // {}) | to_entries | map(.value));
+              peers[]
+              | select(
+                  ((.DNSName // "") | rtrimstr(".") | ascii_downcase) == ($h | ascii_downcase)
+                  or ((.HostName // "") | ascii_downcase) == ($s | ascii_downcase)
+                )
+              | .TailscaleIPs[]
+              | select(test("^[0-9.]+$"))
+            ' | head -1 || true)"
             if [ -n "${ip}" ]; then
               echo "::add-mask::${ip}"
-              break
+              if tailscale ping -c 1 "${ip}" >/dev/null 2>&1; then
+                break
+              fi
             fi
+            ip=""
             sleep 2
           done
           if [ -z "${ip}" ]; then
